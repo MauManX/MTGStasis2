@@ -1,0 +1,311 @@
+@font-face {
+    font-family: "mtgFont";
+    src: url("./font/Planewalker.otf");
+}
+@font-face {
+    font-family: "mtgFontBold";
+    src: url("./font/Planewalker Bold.otf");
+}
+
+html, body {
+    margin: 0;
+    height: 100%;
+    background-color: #001;
+    user-select: none;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.txt {
+    margin-top: 5px;
+    font: 100 25px mtgFont;
+    border-radius: 5px;
+}
+
+.btn {
+    width: 334px;
+    height: 50px;
+    margin-top: 10px;
+    font: 100 25px mtgFont;
+    color: #FFF;
+    text-shadow: 0 0 5px #FFF;
+    background-image: linear-gradient(#F00, #600);
+    border: 2px solid #F66;
+    border-radius: 5px;
+}
+
+#lockScreen {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.8);
+    z-index: 79;
+}
+
+#top {
+    position: absolute;
+    width: 100%;
+    height: 50px;
+    background-image: linear-gradient(#333, #111);
+    z-index: 80;
+}
+
+#bottom {
+    position: absolute;
+    top: calc(100% - 50px);
+    width: 100%;
+    height: 50px;
+    background-image: linear-gradient(#111, #333);
+    z-index: 81;
+}
+
+#timer {
+    position: absolute;
+    font: bold 40px mtgFontBold;
+    color: #FFF;
+    left: 10px;
+    top: 5px;
+    text-shadow: 0 0 5px #999;
+}
+
+#search {
+    position: absolute;
+    font: 100 25px mtgFont;
+    color: #FFF;
+    left: 150px;
+    top: 3px;
+    background-color: #000;
+    text-shadow: 0 0 5px #999;
+}
+
+#log {
+    position: absolute;
+    top: calc(100% - 300px);
+    width: 450px;
+    font: bold 20px "courier new";
+    color: #FFF;
+    background: transparent;
+    background-image: linear-gradient(rgba(255,0,0,0), rgba(255,0,0,0.1));
+    text-shadow: 0 0 5px #FFF;
+    border: none;
+    resize: none;
+    overflow-y: scroll;
+}
+
+#undo {
+    position: absolute;
+    left: 390px;
+    top: calc(100% - 100px);
+    width: 40px;
+    height: 40px;
+    background-image: url(/img/undo.svg);
+}
+
+#menu {
+    position: absolute;
+    left: 5px;
+    top: 5px;
+    width: 40px;
+    height: 40px;
+    background-image: url(/img/blue.svg);
+}
+
+#title {
+    position: absolute;
+    font: bold 40px mtgFontBold;
+    left: 60px;
+    top: -33px;
+    color: #FFF;
+    text-shadow: 0 0 5px #999;
+}
+
+#menuList {
+    position: absolute;
+    text-align: center;
+    left: 10px;
+    top: 60px;
+    width: 200px;
+    height: 290px;
+    background-image: linear-gradient(#00F, #006);
+    border: 2px solid #66F;
+    border-radius: 5px;
+    z-index: 82;
+    display: block;
+}
+
+.menuItem {
+    font: bold 30px mtgFont;
+    color: #FFF;
+    text-shadow: 0 0 5px #FFF;
+}
+
+#menuPlayer {
+    position: absolute;
+    text-align: center;
+    left: 200px;
+    top: 150px;
+    width: 350px;
+    height: 390px;
+    background-image: linear-gradient(#00F, #006);
+    border: 2px solid #66F;
+    border-radius: 5px;
+    z-index: 83;
+    display: none;
+}
+
+#editPlayer {
+    position: absolute;
+    font: bold 40px mtgFontBold;
+    text-align: center;
+    width: 340px;
+    height: 330px;
+    background-image: linear-gradient(#00F, #006);
+    border: 2px solid #66F;
+    border-radius: 5px;
+    z-index: 84;
+    display: none;
+}
+#editName {
+    position: absolute;
+    font: bold 40px mtgFontBold;
+    color: #FFF;
+    text-align: center;
+    left: 20px;
+    top: -40px;
+    width: 320px;
+    height: 50px;
+    text-shadow: 0 0 5px #000;
+}
+.btnLife {
+    position: absolute;
+    font: bold 30px mtgFontBold;
+    color: #FFF;
+    text-align: center;
+    width: 70px;
+    height: 40px;
+    background-image: linear-gradient(#F00, #600);
+    border: 2px solid #F00;
+    border-radius: 5px;
+    text-shadow: 0 0 5px #FFF;
+}
+#btnAdd1 {
+    left: 20px;
+    top: 50px;
+}
+#btnAdd5 {
+    left: 90px;
+    top: 50px;
+}
+#btnAdd10 {
+    left: 160px;
+    top: 50px;
+}
+#editLife {
+    position: absolute;
+    font: bold 60px mtgFontBold;
+    color: #F00;
+    text-align: center;
+    left: 20px;
+    top: 28px;
+    width: 210px;
+    height: 50px;
+    text-shadow: 0 0 5px #000;
+}
+#btnRem1 {
+    left: 20px;
+    top: 150px;
+}
+#btnRem5 {
+    left: 90px;
+    top: 150px;
+}
+#btnRem10 {
+    left: 160px;
+    top: 150px;
+}
+
+.btnPoison {
+    position: absolute;
+    font: bold 30px mtgFontBold;
+    color: #FFF;
+    text-align: center;
+    left: 250px;
+    width: 70px;
+    height: 40px;
+    background-image: linear-gradient(#0F0, #060);
+    border: 2px solid #0F0;
+    border-radius: 5px;
+    text-shadow: 0 0 5px #FFF;
+}
+#btnAddPoison {
+    top: 50px;
+}
+#editPoison {
+    position: absolute;
+    font: bold 60px mtgFontBold;
+    color: #0F0;
+    text-align: center;
+    left: 250px;
+    top: 28px;
+    width: 70px;
+    height: 50px;
+    text-shadow: 0 0 5px #000;
+}
+#btnRemPoison {
+    top: 150px;
+}
+.btnStatus {
+    position: absolute;
+    font: bold 30px mtgFontBold;
+    text-align: center;
+    top: 200px;
+    width: 100px;
+    height: 50px;
+    background-image: linear-gradient(#F90, #630);
+    border: 2px solid #F96;
+    border-radius: 5px;
+    text-shadow: 0 0 5px #000;
+}
+#btnWin {
+    color: #009;
+    left: 20px;
+}
+#editStatus {
+    position: absolute;
+    font: bold 30px mtgFontBold;
+    color: #FFF;
+    text-align: center;
+    left: 120px;
+    top: 180px;
+    width: 100px;
+    height: 50px;
+    text-shadow: 0 0 5px #000;
+}
+#btnDie {
+    color: #F00;
+    left: 220px;
+}
+.btnEdit {
+    position: absolute;
+    font: bold 30px mtgFontBold;
+    color: #FFF;
+    text-align: center;
+    top: 260px;
+    width: 100px;
+    height: 50px;
+    background-image: linear-gradient(#999, #666);
+    border: 2px solid #FFF;
+    border-radius: 5px;
+    text-shadow: 0 0 5px #000;
+}
+#btnReset {
+    left: 20px;
+}
+#btnOk {
+    left: 120px;
+}
+#btnCancel {
+    left: 220px;
+}

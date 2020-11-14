@@ -1,0 +1,513 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <title>MTG Stasis... OBVIOUSLY not allowed Edition</title>
+    <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <script type="text/javascript">
+        let log;
+        let players = [];
+        let deads = [];
+        let gameCount = 1;
+        let zOrder = -1;
+        let iH = 0, iM = 0, iS = 0;
+        let timer = "";
+        let actualPlayer = {
+            id: "",
+            life: 0,
+            poison: 0,
+            status: ""
+        };
+
+        function load() {
+            log = document.getElementById("log");
+            document.getElementById("menuPlayer").style.display = "none";
+            document.getElementById("editPlayer").style.display = "none";
+            document.getElementById("lockScreen").style.display = "block";
+
+            document.getElementById("search").addEventListener("keyup", function (e) {
+                e.preventDefault();
+                if (e.keyCode === 13) { searchCard(); }
+            });
+
+            changeLog(true, "------ Welcome to MTG Stasis ------", false);
+
+            resizeScreen();
+        }
+
+        function changeLog(Add, Text = "", Time = true) {
+            if (Add) {
+                log.value = (Time ? "[" + document.getElementById("timer").innerHTML + "] " : "") + Text + "\n" + log.value;
+            } else {
+                log.value = log.value.substring(log.value.indexOf('\n') + 1);
+            }
+        }
+
+        function positionPlayer() {
+            let x = 0, y = 0, maxCol = parseInt(document.body.clientWidth / 210);
+
+            for (let i = 0; i < players.length; i++) {
+                document.getElementById(players[i]).style.left = (x * 210) + "px";
+                document.getElementById(players[i]).style.top = ((y * 110) + 60) + "px";
+                x++;
+                if (x >= maxCol) {
+                    x = 0;
+                    y++;
+                }
+            }
+        }
+
+        function resizeScreen() {
+            let edit = document.getElementById("editPlayer").style;
+            edit.left = ((document.body.clientWidth - 340) / 2) + "px";
+            edit.top = ((document.body.clientHeight - 330) / 2) + "px";
+
+            positionPlayer();
+        }
+
+        function restartTimer() {
+            let g = ("00" + gameCount);
+            changeLog(true, "\n---------- New Game #" + g.substring(g.length - 3, g.length) + " ----------\n", false);
+            clearInterval(timer);
+            document.getElementById("timer").innerHTML = "00:00:00";
+            iH = 0; iM = 0; iS = 0;
+
+            timer = setInterval(function () {
+                iS++;
+                if (iS == 60) { iS = 0; iM++; if (iM == 60) { iM = 0; iH++; } }
+                document.getElementById("timer").innerHTML = ("00" + iH).substr(-2) + ":" + ("00" + iM).substr(-2) + ":" + ("00" + iS).substr(-2);
+            }, 1000);
+        }
+
+        function newGame() {
+            if (players.length === 0) {
+                showMenuPlayer();
+            } else {
+                for (let i = 0; i < players.length; i++) {
+                    if (document.getElementById(players[i])) {
+                        document.getElementById("status" + players[i]).style.display = "none";
+                        document.getElementById("status" + players[i]).innerHTML = "Alive";
+                        document.getElementById("life" + players[i]).innerHTML = 20;
+                        document.getElementById("poison" + players[i]).innerHTML = 0;
+                    }
+                }
+                deads = [];
+                gameCount++;
+                if (gameCount > 999) { gameCount = 1; }
+
+                showMenu();
+                restartTimer();
+            }
+        }
+
+        function editWin(Win = true) {
+            document.getElementById("editStatus").innerHTML = Win ? "Win" : "Dead";
+        }
+
+        function checkStatus(Id) {
+            let status = document.getElementById("status" + Id);
+            let editStatus = document.getElementById("editStatus");
+            let mode = "", i, winner = "";
+            if (parseInt(document.getElementById("life" + Id).innerHTML) <= 0 ||
+                parseInt(document.getElementById("poison" + Id).innerHTML) >= 10) {
+                mode = "Dead";
+            } else {
+                if (editStatus.innerHTML != "Alive") {
+                    mode = editStatus.innerHTML;
+
+                    if (mode === "Win") {
+                        for (i = 0; i < players.length; i++) {
+                            if (players[i] != Id) {
+                                document.getElementById("status" + players[i]).innerHTML = "Lose";
+                                document.getElementById("status" + players[i]).style.color = "#606";
+                                document.getElementById("status" + players[i]).style.display = "block";
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (mode != "") {
+                status.innerHTML = mode;
+                status.style.color = mode === "Win" ? "#DD0" : "#600";
+                status.style.display = "block";
+
+                if (mode === "Dead") {
+                    changeLog(true, document.getElementById("name" + Id).innerHTML + " DIED!!!");
+                    deads.push(Id);
+                    if (players.length - 1 === deads.length) {
+                        for (i = 0; i < deads.length; i++) {
+                            document.getElementById("status" + deads[i]).innerHTML = "Lose";
+                            document.getElementById("status" + deads[i]).style.color = "#606";
+                            document.getElementById("status" + deads[i]).style.display = "block";
+                        }
+                        for (i = 0; i < players.length; i++) {
+                            if (document.getElementById("status" + players[i]).innerHTML === "Alive") {
+                                document.getElementById("status" + players[i]).innerHTML = "Win";
+                                document.getElementById("status" + players[i]).style.color = "#DD0";
+                                document.getElementById("status" + players[i]).style.display = "block";
+                                winner = "name" + players[i];
+                                break;
+                            }
+                        }
+                        mode = "Win";
+                    }
+                } else {
+                    winner = "name" + Id;
+                }
+            }
+            if (mode === "Win") {
+                let g = ("00" + gameCount);
+                changeLog(true, document.getElementById(winner).innerHTML + " WON game #" + g.substring(g.length - 3, g.length));
+                clearInterval(timer);
+            }
+        }
+
+        function showMenu() {
+            if (actualPlayer.id === "") {
+                let list = document.getElementById("menuList").style;
+                let player = document.getElementById("menuPlayer").style;
+                let lock = document.getElementById("lockScreen").style;
+                if (list.display === "none") {
+                    list.display = "block";
+                    lock.display = "block";
+                } else {
+                    list.display = "none";
+                    if (player.display === "block") {
+                        player.display = "none";
+                    }
+                    lock.display = "none";
+                }
+            }
+        }
+
+        function showMenuPlayer() {
+            let player = document.getElementById("menuPlayer").style;
+            if (player.display === "none") {
+                player.display = "block";
+            } else {
+                player.display = "none";
+            }
+        }
+
+        function showEdit(Id) {
+            if (document.getElementById("status" + Id).innerHTML === "Alive") {
+                actualPlayer.id = Id;
+                actualPlayer.life = parseInt(document.getElementById("life" + Id).innerHTML);
+                actualPlayer.poison = parseInt(document.getElementById("poison" + Id).innerHTML);
+                actualPlayer.status = "Alive";
+                document.getElementById("editName").innerHTML = document.getElementById("name" + Id).innerHTML;
+                document.getElementById("editLife").innerHTML = actualPlayer.life;
+                document.getElementById("editPoison").innerHTML = actualPlayer.poison;
+                document.getElementById("editStatus").innerHTML = actualPlayer.status;
+
+                document.getElementById("editPlayer").style.display = "block";
+                document.getElementById("lockScreen").style.display = "block";
+            }
+        }
+
+        function changeValue(Mode, Value) {
+            let editStatus = document.getElementById("editStatus");
+            if (editStatus.innerHTML === "Alive") {
+                let o = document.getElementById("edit" + (Mode === 0 ? "Life" : "Poison"));
+                let value = parseInt(o.innerHTML);
+                if (Mode === 0) {//life
+                    value += Value;
+                } else {//poison
+                    if (value + Value >= 0) {
+                        value += Value;
+                    }
+                }
+                o.innerHTML = value;
+            }
+        }
+
+        function resetChange() {
+            document.getElementById("editLife").innerHTML = actualPlayer.life;
+            document.getElementById("editPoison").innerHTML = actualPlayer.poison;
+            document.getElementById("editStatus").innerHTML = actualPlayer.status;
+        }
+
+        function editConfirm(Ok = true) {
+            let name = document.getElementById("name" + actualPlayer.id);
+            let editLife = document.getElementById("editLife");
+            let editPoison = document.getElementById("editPoison");
+            let life = 0, poison = 0;
+            if (Ok) {
+                document.getElementById("life" + actualPlayer.id).innerHTML = editLife.innerHTML;
+                document.getElementById("poison" + actualPlayer.id).innerHTML = editPoison.innerHTML;
+
+                if (actualPlayer.life != editLife.innerHTML) {
+                    life = parseInt(editLife.innerHTML) - actualPlayer.life;
+                    changeLog(true, name.innerHTML + ": " + (life < 0 ? "" : "+") + life + " life");
+                }
+                if (actualPlayer.poison != editPoison.innerHTML) {
+                    poison = parseInt(editPoison.innerHTML) - actualPlayer.poison;
+                    changeLog(true, name.innerHTML + ": " + (poison < 0 ? "" : "+") + poison + " poison");
+                }
+
+                checkStatus(actualPlayer.id);
+            }
+            actualPlayer.id = "";
+            actualPlayer.life = 0;
+            actualPlayer.poison = 0;
+            actualPlayer.status = "";
+            document.getElementById("editPlayer").style.display = "none";
+            document.getElementById("lockScreen").style.display = "none";
+        }
+
+        function addPlayer(Id, X, Y) {
+            zOrder++;
+
+            let o = document.createElement("div");
+            o.id = "P" + Id;
+            //o.onmousedown = function () { Drag(o.id); };
+            o.onmousedown = function () { showEdit(o.id); };
+            o.style.position = "absolute";
+            o.style.alignItems = "center";
+            o.style.fontFamily = "mtgFontBold";
+            o.style.left = X + "px";
+            o.style.top = (Y + 60) + "px";
+            o.style.width = "200px";
+            o.style.height = "100px";
+            o.style.backgroundImage = "linear-gradient(rgba(" + (Math.random() * 255) + "," + (Math.random() * 255) + "," + (Math.random() * 255) + ",1),#000)";
+            o.style.border = "2px solid #999";
+            o.style.borderRadius = "5px";
+            o.style.zIndex = zOrder;
+            document.getElementById("game").appendChild(o);
+
+            let name = document.createElement("p");
+            name.id = "nameP" + Id;
+            name.style.position = "relative";
+            name.style.textAlign = "center";
+            name.style.fontSize = "30px";
+            name.style.color = "#FFF";
+            name.style.top = "-30px";
+            name.style.textShadow = "0 0 5px #000";
+            name.style.borderRadius = "5px";
+            document.getElementById(o.id).appendChild(name);
+            document.getElementById(name.id).innerHTML = document.getElementById("txtP" + Id).value === "" ? "Player " + Id : document.getElementById("txtP" + Id).value;
+
+            let lifeIcon = document.createElement("div");
+            lifeIcon.id = "lifeIcon" + Id;
+            lifeIcon.style.position = "absolute";
+            lifeIcon.style.textAlign = "center";
+            lifeIcon.style.fontSize = "20px";
+            lifeIcon.style.color = "#F00";
+            lifeIcon.style.left = "0";
+            lifeIcon.style.top = "35px";
+            lifeIcon.style.width = "100px";
+            lifeIcon.style.height = "30px";
+            lifeIcon.style.textShadow = "0 0 5px #000";
+            document.getElementById(o.id).appendChild(lifeIcon);
+            document.getElementById(lifeIcon.id).innerHTML = "Life";
+
+            let life = document.createElement("p");
+            life.id = "lifeP" + Id;
+            life.style.position = "absolute";
+            life.style.textAlign = "center";
+            life.style.fontSize = "50px";
+            life.style.color = "#F00";
+            life.style.left = "0";
+            life.style.top = "0";
+            life.style.width = "100px";
+            life.style.textShadow = "0 0 5px #000";
+            document.getElementById(o.id).appendChild(life);
+            document.getElementById(life.id).innerHTML = 20;
+
+            let poisonIcon = document.createElement("div");
+            poisonIcon.id = "poisonIcon" + Id;
+            poisonIcon.style.position = "absolute";
+            poisonIcon.style.textAlign = "center";
+            poisonIcon.style.fontSize = "20px";
+            poisonIcon.style.color = "#0F0";
+            poisonIcon.style.left = "100px";
+            poisonIcon.style.top = "35px";
+            poisonIcon.style.width = "100px";
+            poisonIcon.style.height = "30px";
+            poisonIcon.style.textShadow = "0 0 5px #000";
+            document.getElementById(o.id).appendChild(poisonIcon);
+            document.getElementById(poisonIcon.id).innerHTML = "Poison";
+
+            let poison = document.createElement("p");
+            poison.id = "poisonP" + Id;
+            poison.style.position = "absolute";
+            poison.style.textAlign = "center";
+            poison.style.fontSize = "50px";
+            poison.style.color = "#0F0";
+            poison.style.left = "100px";
+            poison.style.top = "0";
+            poison.style.width = "100px";
+            poison.style.textShadow = "0 0 5px #000";
+            document.getElementById(o.id).appendChild(poison);
+            document.getElementById(poison.id).innerHTML = 0;
+
+            let status = document.createElement("div");
+            status.id = "statusP" + Id;
+            status.style.position = "absolute";
+            status.style.textAlign = "center";
+            status.style.lineHeight = "120px";
+            status.style.fontSize = "60px";
+            status.style.color = "#600";
+            status.style.left = "0";
+            status.style.top = "0";
+            status.style.width = "200px";
+            status.style.height = "100px";
+            status.style.textShadow = "0 0 5px #000";
+            status.style.backgroundColor = "rgba(255,255,255,0.7)";
+            status.style.borderRadius = "5px";
+            status.style.display = "none";
+            document.getElementById(o.id).appendChild(status);
+            document.getElementById(status.id).innerHTML = "Alive";
+
+            players.push(o.id);
+
+            //Drag(o);
+        }
+
+        function removePlayers() {
+            for (let i = 0; i < players.length; i++) {
+                if (document.getElementById(players[i])) {
+                    document.getElementById(players[i]).remove();
+                }
+            }
+            players = [];
+        }
+
+        function createPlayers() {
+            let playerCount = 0;
+
+            removePlayers();
+
+            for (let i = 1; i <= 8; i++) {
+                if (document.getElementById("chkP" + i).checked === true) {
+                    playerCount++;
+                }
+            }
+            if (playerCount > 1) {
+                let x = 0, y = 0;
+                for (let i = 1; i <= 8; i++) {
+                    if (document.getElementById("chkP" + i).checked === true) {
+                        addPlayer(i, x * 210, y * 110);
+                        playerCount--;
+                        if (playerCount === 0) { break; }
+
+                        x++;
+                        if (x > 2) { x = 0; y++; }
+                    }
+                }
+                showMenu();
+                positionPlayer();
+                restartTimer();
+            } else {
+                alert("Requires 2 or more players with names!");
+            }
+        }
+
+        function searchCard(e) {
+            let search = document.getElementById("search");
+            if (search.value != "") {
+                window.open("https://scryfall.com/search?q=" + search.value);
+            }
+        }
+
+        /*
+        function Drag(Player) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            let Obj = document.getElementById("P" + Player);
+            Obj.onmousedown = dragMouseDown;
+
+            function dragMouseDown(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+
+                let o = document.getElementsByTagName("div");
+
+                for (let i = 1; i < o.length; i++) {
+                    if (o[i].style.zIndex > parseInt(Obj.style.zIndex)) { o[i].style.zIndex--; }
+                }
+
+                Obj.style.zIndex = zOrder - 3;
+            }
+
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                Obj.style.top = (Obj.offsetTop - pos2) + "px";
+                Obj.style.left = (Obj.offsetLeft - pos1) + "px";
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+        */
+    </script>
+</head>
+<body id="game" onload="load()" onresize="resizeScreen()">
+    <div id="top">
+        <div id="menu" title="Menu" onclick="showMenu()"><p id="btnMenu"></div>
+        <p id="title">MTG Stasis... OBVIOUSLY not allowed Edition</p>
+    </div>
+    <div id="bottom">
+        <div id="timer">00:00:00</div>
+        <input id="search" class="txt" type="text" placeholder="Search on Scryfall" />
+    </div>
+    <div id="menuList">
+        <p id="mNewGame" class="menuItem" onclick="newGame()">New Game</p>
+        <p id="mPlayers" class="menuItem" onclick="showMenuPlayer()">Players</p>
+        <p id="mUndo" class="menuItem" onclick="undo()">Undo</p>
+        <p id="mCredits" class="menuItem">Credits</p>
+    </div>
+    <div id="menuPlayer">
+        <input id="chkP1" type="checkbox" checked>
+        <input id="txtP1" class="txt" type="text" placeholder="Player 1" maxlength="10" /><br>
+        <input id="chkP2" type="checkbox">
+        <input id="txtP2" class="txt" type="text" placeholder="Player 2" maxlength="10" /><br>
+        <input id="chkP3" type="checkbox">
+        <input id="txtP3" class="txt" type="text" placeholder="Player 3" maxlength="10" /><br>
+        <input id="chkP4" type="checkbox">
+        <input id="txtP4" class="txt" type="text" placeholder="Player 4" maxlength="10" /><br>
+        <input id="chkP5" type="checkbox">
+        <input id="txtP5" class="txt" type="text" placeholder="Player 5" maxlength="10" /><br>
+        <input id="chkP6" type="checkbox">
+        <input id="txtP6" class="txt" type="text" placeholder="Player 6" maxlength="10" /><br>
+        <input id="chkP7" type="checkbox">
+        <input id="txtP7" class="txt" type="text" placeholder="Player 7" maxlength="10" /><br>
+        <input id="chkP8" type="checkbox">
+        <input id="txtP8" class="txt" type="text" placeholder="Player 8" maxlength="10" /><br>
+        <input id="btnPlayer" class="btn" type="button" value="Create Players" onclick="createPlayers()" />
+    </div>
+    <div id="editPlayer">
+        <p id="editName">name</p>
+        <input id="btnAdd1" class="btnLife" type="button" value="+1" onclick="changeValue(0,1)" />
+        <input id="btnAdd5" class="btnLife" type="button" value="+5" onclick="changeValue(0,5)" />
+        <input id="btnAdd10" class="btnLife" type="button" value="+10" onclick="changeValue(0,10)" />
+        <p id="editLife">20</p>
+        <input id="btnRem1" class="btnLife" type="button" value="-1" onclick="changeValue(0,-1)" />
+        <input id="btnRem5" class="btnLife" type="button" value="-5" onclick="changeValue(0,-5)" />
+        <input id="btnRem10" class="btnLife" type="button" value="-10" onclick="changeValue(0,-10)" />
+        <input id="btnAddPoison" class="btnPoison" type="button" value="+1" onclick="changeValue(1,1)" />
+        <p id="editPoison">0</p>
+        <input id="btnRemPoison" class="btnPoison" type="button" value="-1" onclick="changeValue(1,-1)" />
+        <input id="btnWin" class="btnStatus" type="button" value="Win" onclick="editWin()" />
+        <p id="editStatus">Alive</p>
+        <input id="btnDie" class="btnStatus" type="button" value="Die" onclick="editWin(false)" />
+        <input id="btnReset" class="btnEdit" type="button" value="Reset" onclick="resetChange()" />
+        <input id="btnOk" class="btnEdit" type="button" value="Ok" onclick="editConfirm()" />
+        <input id="btnCancel" class="btnEdit" type="button" value="Cancel" onclick="editConfirm(false)" />
+    </div>
+    <textarea id="log" rows="10" value="" readonly></textarea>
+    <div id="undo" title="Undo" onclick="undo()"></div>
+    <div id="lockScreen"></div>
+</body>
+</html>
