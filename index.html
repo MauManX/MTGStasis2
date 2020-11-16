@@ -8,10 +8,11 @@
         let log;
         let players = [];
         let deads = [];
+        let lastDeads = [];
         let gameCount = 1;
         let zOrder = -1;
         let iH = 0, iM = 0, iS = 0;
-        let timer = "";
+        let timer;
         let actualPlayer = {
             id: "",
             life: 0,
@@ -87,11 +88,12 @@
                     if (document.getElementById(players[i])) {
                         document.getElementById("status" + players[i]).style.display = "none";
                         document.getElementById("status" + players[i]).innerHTML = "Alive";
-                        document.getElementById("life" + players[i]).innerHTML = 20;
-                        document.getElementById("poison" + players[i]).innerHTML = 0;
+                        document.getElementById("life" + players[i]).innerHTML = "20";
+                        document.getElementById("poison" + players[i]).innerHTML = "0";
                     }
                 }
                 deads = [];
+                lastDeads = [];
                 gameCount++;
                 if (gameCount > 999) { gameCount = 1; }
 
@@ -133,7 +135,7 @@
                 status.style.display = "block";
 
                 if (mode === "Dead") {
-                    changeLog(true, document.getElementById("name" + Id).innerHTML + " DIED!!!");
+                    changeLog(true, document.getElementById("name" + Id).innerHTML + ": DIED!!!");
                     deads.push(Id);
                     if (players.length - 1 === deads.length) {
                         for (i = 0; i < deads.length; i++) {
@@ -153,12 +155,17 @@
                         mode = "Win";
                     }
                 } else {
+                    for (i = 0; i < deads.length; i++) {
+                        if (document.getElementById("status" + players[i]).innerHTML === "Alive") {
+                            lastDeads.push(players[i]);
+                        }
+                    }
                     winner = "name" + Id;
                 }
             }
             if (mode === "Win") {
                 let g = ("00" + gameCount);
-                changeLog(true, document.getElementById(winner).innerHTML + " WON game #" + g.substring(g.length - 3, g.length));
+                changeLog(true, document.getElementById(winner).innerHTML + ": WON game #" + g.substring(g.length - 3, g.length));
                 clearInterval(timer);
             }
         }
@@ -237,11 +244,11 @@
                 document.getElementById("life" + actualPlayer.id).innerHTML = editLife.innerHTML;
                 document.getElementById("poison" + actualPlayer.id).innerHTML = editPoison.innerHTML;
 
-                if (actualPlayer.life != editLife.innerHTML) {
+                if (actualPlayer.life != parseInt(editLife.innerHTML)) {
                     life = parseInt(editLife.innerHTML) - actualPlayer.life;
                     changeLog(true, name.innerHTML + ": " + (life < 0 ? "" : "+") + life + " life");
                 }
-                if (actualPlayer.poison != editPoison.innerHTML) {
+                if (actualPlayer.poison != parseInt(editPoison.innerHTML)) {
                     poison = parseInt(editPoison.innerHTML) - actualPlayer.poison;
                     changeLog(true, name.innerHTML + ": " + (poison < 0 ? "" : "+") + poison + " poison");
                 }
@@ -261,7 +268,6 @@
 
             let o = document.createElement("div");
             o.id = "P" + Id;
-            //o.onmousedown = function () { Drag(o.id); };
             o.onmousedown = function () { showEdit(o.id); };
             o.style.position = "absolute";
             o.style.alignItems = "center";
@@ -313,7 +319,7 @@
             life.style.width = "100px";
             life.style.textShadow = "0 0 5px #000";
             document.getElementById(o.id).appendChild(life);
-            document.getElementById(life.id).innerHTML = 20;
+            document.getElementById(life.id).innerHTML = "20";
 
             let poisonIcon = document.createElement("div");
             poisonIcon.id = "poisonIcon" + Id;
@@ -340,7 +346,7 @@
             poison.style.width = "100px";
             poison.style.textShadow = "0 0 5px #000";
             document.getElementById(o.id).appendChild(poison);
-            document.getElementById(poison.id).innerHTML = 0;
+            document.getElementById(poison.id).innerHTML = "0";
 
             let status = document.createElement("div");
             status.id = "statusP" + Id;
@@ -361,8 +367,6 @@
             document.getElementById(status.id).innerHTML = "Alive";
 
             players.push(o.id);
-
-            //Drag(o);
         }
 
         function removePlayers() {
@@ -404,53 +408,56 @@
             }
         }
 
-        function searchCard(e) {
+        function searchCard() {
             let search = document.getElementById("search");
             if (search.value != "") {
                 window.open("https://scryfall.com/search?q=" + search.value);
             }
         }
 
-        /*
-        function Drag(Player) {
-            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-            let Obj = document.getElementById("P" + Player);
-            Obj.onmousedown = dragMouseDown;
+        function undo() {
+            let line = "",
+                player = "",
+                action = "",
+                value = 0;
 
-            function dragMouseDown(e) {
-                e = e || window.event;
-                e.preventDefault();
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                document.onmouseup = closeDragElement;
-                document.onmousemove = elementDrag;
+            let log = document.getElementById("log");
+            
+            if (log.value.substring(0, 1) === "[") {
+                line = log.value.substring(11, log.value.indexOf("\n"));
+                player = line.substring(0, line.indexOf(":"));
+                action = line.substring(line.indexOf(":") + 2);
 
-                let o = document.getElementsByTagName("div");
+                log.value = log.value.substring(log.value.indexOf("\n") + 1);
 
-                for (let i = 1; i < o.length; i++) {
-                    if (o[i].style.zIndex > parseInt(Obj.style.zIndex)) { o[i].style.zIndex--; }
+                for (let i = 0; i < players.length; i++) {
+                    if (player === document.getElementById("name" + players[i]).innerHTML) {
+                        if (action.indexOf("life") > -1) {
+                            value = parseInt(action.substring(0, line.indexOf(" "))) * -1;
+                            document.getElementById("life" + players[i]).innerHTML = parseInt(document.getElementById("life" + players[i]).innerHTML) + value;
+                        } else if (action.indexOf("poison") > -1) {
+                            value = parseInt(action.substring(0, line.indexOf(" "))) * -1;
+                            document.getElementById("poison" + players[i]).innerHTML = parseInt(document.getElementById("poison" + players[i]).innerHTML) + value;
+                        } else if (action.indexOf("DIED") > -1) {
+                            document.getElementById("status" + players[i]).innerHTML = "Alive";
+                            document.getElementById("status" + players[i]).style.display = "none";
+                            for (i = 0; i < deads.length; i++) {
+                                if (player === document.getElementById("name" + deads[i]).innerHTML) {
+                                    deads.splice(i, 1);
+                                    break;
+                                }
+                            }
+                            undo();
+                        } else if (action.indexOf("WON") > -1) {
+                            document.getElementById("status" + players[i]).innerHTML = "Alive";
+                            document.getElementById("status" + players[i]).style.display = "none";
+                            undo();
+                        }
+                        break;
+                    }
                 }
-
-                Obj.style.zIndex = zOrder - 3;
-            }
-
-            function elementDrag(e) {
-                e = e || window.event;
-                e.preventDefault();
-                pos1 = pos3 - e.clientX;
-                pos2 = pos4 - e.clientY;
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                Obj.style.top = (Obj.offsetTop - pos2) + "px";
-                Obj.style.left = (Obj.offsetLeft - pos1) + "px";
-            }
-
-            function closeDragElement() {
-                document.onmouseup = null;
-                document.onmousemove = null;
             }
         }
-        */
     </script>
 </head>
 <body id="game" onload="load()" onresize="resizeScreen()">
@@ -460,7 +467,7 @@
     </div>
     <div id="bottom">
         <div id="timer">00:00:00</div>
-        <input id="search" class="txt" type="text" placeholder="Search on Scryfall" />
+        <input id="search" type="text" placeholder="Search on Scryfall" />
     </div>
     <div id="menuList">
         <p id="mNewGame" class="menuItem" onclick="newGame()">New Game</p>
@@ -469,21 +476,21 @@
         <p id="mCredits" class="menuItem">Credits</p>
     </div>
     <div id="menuPlayer">
-        <input id="chkP1" type="checkbox" checked>
+        <input id="chkP1" class="chk" type="checkbox" checked>
         <input id="txtP1" class="txt" type="text" placeholder="Player 1" maxlength="10" /><br>
-        <input id="chkP2" type="checkbox">
+        <input id="chkP2" class="chk" type="checkbox">
         <input id="txtP2" class="txt" type="text" placeholder="Player 2" maxlength="10" /><br>
-        <input id="chkP3" type="checkbox">
+        <input id="chkP3" class="chk" type="checkbox">
         <input id="txtP3" class="txt" type="text" placeholder="Player 3" maxlength="10" /><br>
-        <input id="chkP4" type="checkbox">
+        <input id="chkP4" class="chk" type="checkbox">
         <input id="txtP4" class="txt" type="text" placeholder="Player 4" maxlength="10" /><br>
-        <input id="chkP5" type="checkbox">
+        <input id="chkP5" class="chk" type="checkbox">
         <input id="txtP5" class="txt" type="text" placeholder="Player 5" maxlength="10" /><br>
-        <input id="chkP6" type="checkbox">
+        <input id="chkP6" class="chk" type="checkbox">
         <input id="txtP6" class="txt" type="text" placeholder="Player 6" maxlength="10" /><br>
-        <input id="chkP7" type="checkbox">
+        <input id="chkP7" class="chk" type="checkbox">
         <input id="txtP7" class="txt" type="text" placeholder="Player 7" maxlength="10" /><br>
-        <input id="chkP8" type="checkbox">
+        <input id="chkP8" class="chk" type="checkbox">
         <input id="txtP8" class="txt" type="text" placeholder="Player 8" maxlength="10" /><br>
         <input id="btnPlayer" class="btn" type="button" value="Create Players" onclick="createPlayers()" />
     </div>
