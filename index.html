@@ -5,11 +5,11 @@
     <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" type="text/css" href="styles.css">
     <script type="text/javascript">
-        let log;
         let players = [];
         let deads = [];
         let lastDeads = [];
-        let gameCount = 1;
+        let noDead = true;
+        let gameCount = 0;
         let zOrder = -1;
         let iH = 0, iM = 0, iS = 0;
         let timer;
@@ -66,13 +66,13 @@
             positionPlayer();
         }
 
-        function restartTimer() {
-            let g = ("00" + gameCount);
-            changeLog(true, "\n---------- New Game #" + g.substring(g.length - 3, g.length) + " ----------\n", false);
-            clearInterval(timer);
-            document.getElementById("timer").innerHTML = "00:00:00";
-            iH = 0; iM = 0; iS = 0;
-
+        function runTimer(Restart = true) {
+            if (Restart) {
+                clearInterval(timer);
+                document.getElementById("timer").innerHTML = "00:00:00";
+                iH = 0; iM = 0; iS = 0;
+            }
+            
             timer = setInterval(function () {
                 iS++;
                 if (iS == 60) { iS = 0; iM++; if (iM == 60) { iM = 0; iH++; } }
@@ -98,7 +98,10 @@
                 if (gameCount > 999) { gameCount = 1; }
 
                 showMenu();
-                restartTimer();
+                positionPlayer();
+                runTimer();
+                let g = ("00" + gameCount);
+                changeLog(true, "\n---------- New Game #" + g.substring(g.length - 3, g.length) + " ----------\n", false);
             }
         }
 
@@ -120,6 +123,9 @@
                     if (mode === "Win") {
                         for (i = 0; i < players.length; i++) {
                             if (players[i] != Id) {
+                                if (document.getElementById("status" + players[i]).innerHTML === "Alive") {
+                                    lastDeads.push(players[i]);
+                                }
                                 document.getElementById("status" + players[i]).innerHTML = "Lose";
                                 document.getElementById("status" + players[i]).style.color = "#606";
                                 document.getElementById("status" + players[i]).style.display = "block";
@@ -155,11 +161,6 @@
                         mode = "Win";
                     }
                 } else {
-                    for (i = 0; i < deads.length; i++) {
-                        if (document.getElementById("status" + players[i]).innerHTML === "Alive") {
-                            lastDeads.push(players[i]);
-                        }
-                    }
                     winner = "name" + Id;
                 }
             }
@@ -204,8 +205,8 @@
                 actualPlayer.poison = parseInt(document.getElementById("poison" + Id).innerHTML);
                 actualPlayer.status = "Alive";
                 document.getElementById("editName").innerHTML = document.getElementById("name" + Id).innerHTML;
-                document.getElementById("editLife").innerHTML = actualPlayer.life;
-                document.getElementById("editPoison").innerHTML = actualPlayer.poison;
+                document.getElementById("editLife").innerHTML = actualPlayer.life.toString();
+                document.getElementById("editPoison").innerHTML = actualPlayer.poison.toString();
                 document.getElementById("editStatus").innerHTML = actualPlayer.status;
 
                 document.getElementById("editPlayer").style.display = "block";
@@ -400,9 +401,7 @@
                         if (x > 2) { x = 0; y++; }
                     }
                 }
-                showMenu();
-                positionPlayer();
-                restartTimer();
+                newGame();
             } else {
                 alert("Requires 2 or more players with names!");
             }
@@ -428,7 +427,9 @@
                 player = line.substring(0, line.indexOf(":"));
                 action = line.substring(line.indexOf(":") + 2);
 
-                log.value = log.value.substring(log.value.indexOf("\n") + 1);
+                if ((noDead && action.indexOf("DIED") > -1) || action.indexOf("DIED") === -1) {
+                    log.value = log.value.substring(log.value.indexOf("\n") + 1);
+                }
 
                 for (let i = 0; i < players.length; i++) {
                     if (player === document.getElementById("name" + players[i]).innerHTML) {
@@ -438,7 +439,7 @@
                         } else if (action.indexOf("poison") > -1) {
                             value = parseInt(action.substring(0, line.indexOf(" "))) * -1;
                             document.getElementById("poison" + players[i]).innerHTML = parseInt(document.getElementById("poison" + players[i]).innerHTML) + value;
-                        } else if (action.indexOf("DIED") > -1) {
+                        } else if (noDead && action.indexOf("DIED") > -1) {
                             document.getElementById("status" + players[i]).innerHTML = "Alive";
                             document.getElementById("status" + players[i]).style.display = "none";
                             for (i = 0; i < deads.length; i++) {
@@ -447,11 +448,30 @@
                                     break;
                                 }
                             }
+                            noDead = false;
                             undo();
+                            noDead = true;
                         } else if (action.indexOf("WON") > -1) {
-                            document.getElementById("status" + players[i]).innerHTML = "Alive";
-                            document.getElementById("status" + players[i]).style.display = "none";
-                            undo();
+                            if (lastDeads.length > 0) {
+                                for (let j = 0; j < players.length; j++) {
+                                    if (lastDeads.indexOf(players[j]) > -1) {
+                                        document.getElementById("status" + players[j]).innerHTML = "Alive";
+                                        document.getElementById("status" + players[j]).style.display = "none";
+                                    } else {
+                                        if (document.getElementById("status" + players[j]).innerHTML === "Win") {
+                                            document.getElementById("status" + players[i]).innerHTML = "Alive";
+                                            document.getElementById("status" + players[i]).style.display = "none";
+                                        } else {
+                                            document.getElementById("status" + players[j]).innerHTML = "Dead";
+                                            document.getElementById("status" + players[j]).style.color = "#600";
+                                        }
+                                    }
+                                }
+                                lastDeads = [];
+                                runTimer(false);
+                            } else {
+                                undo();
+                            }
                         }
                         break;
                     }
