@@ -5,6 +5,7 @@
     <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" type="text/css" href="styles.css">
     <script type="text/javascript">
+        let log;
         let players = [];
         let deads = [];
         let lastDeads = [];
@@ -45,7 +46,7 @@
         }
 
         function positionPlayer() {
-            let x = 0, y = 0, maxCol = parseInt(document.body.clientWidth / 210);
+            let x = 0, y = 0, maxCol = Math.round(document.body.clientWidth / 210);
 
             for (let i = 0; i < players.length; i++) {
                 document.getElementById(players[i]).style.left = (x * 210) + "px";
@@ -226,13 +227,13 @@
                         value += Value;
                     }
                 }
-                o.innerHTML = value;
+                o.innerHTML = value.toString();
             }
         }
 
         function resetChange() {
-            document.getElementById("editLife").innerHTML = actualPlayer.life;
-            document.getElementById("editPoison").innerHTML = actualPlayer.poison;
+            document.getElementById("editLife").innerHTML = actualPlayer.life.toString();
+            document.getElementById("editPoison").innerHTML = actualPlayer.poison.toString();
             document.getElementById("editStatus").innerHTML = actualPlayer.status;
         }
 
@@ -280,7 +281,7 @@
             o.style.backgroundImage = "linear-gradient(rgba(" + (Math.random() * 255) + "," + (Math.random() * 255) + "," + (Math.random() * 255) + ",1),#000)";
             o.style.border = "2px solid #999";
             o.style.borderRadius = "5px";
-            o.style.zIndex = zOrder;
+            o.style.zIndex = zOrder.toString();
             document.getElementById("game").appendChild(o);
 
             let name = document.createElement("p");
@@ -435,10 +436,10 @@
                     if (player === document.getElementById("name" + players[i]).innerHTML) {
                         if (action.indexOf("life") > -1) {
                             value = parseInt(action.substring(0, line.indexOf(" "))) * -1;
-                            document.getElementById("life" + players[i]).innerHTML = parseInt(document.getElementById("life" + players[i]).innerHTML) + value;
+                            document.getElementById("life" + players[i]).innerHTML = (parseInt(document.getElementById("life" + players[i]).innerHTML) + value).toString();
                         } else if (action.indexOf("poison") > -1) {
                             value = parseInt(action.substring(0, line.indexOf(" "))) * -1;
-                            document.getElementById("poison" + players[i]).innerHTML = parseInt(document.getElementById("poison" + players[i]).innerHTML) + value;
+                            document.getElementById("poison" + players[i]).innerHTML = (parseInt(document.getElementById("poison" + players[i]).innerHTML) + value).toString();
                         } else if (noDead && action.indexOf("DIED") > -1) {
                             document.getElementById("status" + players[i]).innerHTML = "Alive";
                             document.getElementById("status" + players[i]).style.display = "none";
